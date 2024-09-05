@@ -17,7 +17,8 @@ jobs:
         id: changed-files
         run: |
           git fetch origin ${{ github.base_ref }}
-          echo "CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}..HEAD | xargs)" >> $GITHUB_OUTPUT
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}..HEAD | xargs)
+          echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
 
       - name: Review PR with Claude
         env:
@@ -38,14 +39,17 @@ jobs:
           client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
 
           # Get changed files
-          changed_files = os.environ['CHANGED_FILES'].split()
+          changed_files = os.environ.get('CHANGED_FILES', '').split()
 
           # Prepare the prompt for Claude
           prompt = f"You are reviewing a pull request. The following files were changed:\n\n"
           for file in changed_files:
-              with open(file, 'r') as f:
-                  content = f.read()
-              prompt += f"File: {file}\n```\n{content}\n```\n\n"
+              try:
+                  with open(file, 'r') as f:
+                      content = f.read()
+                  prompt += f"File: {file}\n```\n{content}\n```\n\n"
+              except Exception as e:
+                  prompt += f"File: {file}\nError reading file: {str(e)}\n\n"
           
           prompt += "Please review these changes and provide feedback. Focus on code quality, potential bugs, and adherence to best practices."
 
