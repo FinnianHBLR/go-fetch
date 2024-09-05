@@ -1,18 +1,17 @@
 name: Claude PR Review
-
 on:
   pull_request:
     types: [opened, synchronize]
-
 jobs:
   claude-review:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
       - name: Get changed files
         id: changed-files
         run: |
@@ -20,7 +19,6 @@ jobs:
           CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}..HEAD | xargs)
           echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
           echo "Changed files: $CHANGED_FILES"
-
       - name: Review PR with Claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -35,17 +33,18 @@ jobs:
           import requests
           import os
           import json
+          import subprocess
 
           print("Starting PR review process...")
-
+          
           # Initialize Anthropic client
           client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
           print("Anthropic client initialized.")
-
+          
           # Get changed files
           changed_files = os.environ.get('CHANGED_FILES', '').split()
           print(f"Changed files: {changed_files}")
-
+          
           # Prepare the message for Claude
           system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
           user_message = "I'm reviewing a pull request. Here are the changed files:\n\n"
@@ -57,12 +56,20 @@ jobs:
                   user_message += f"File: {file}\n```\n{content}\n```\n\n"
                   print(f"Added content for file: {file}")
               except Exception as e:
-                  user_message += f"File: {file}\nError reading file: {str(e)}\n\n"
                   print(f"Error reading file {file}: {str(e)}")
+                  # If we can't read the file, try to get its diff
+                  try:
+                      base_ref = os.environ['GITHUB_BASE_REF']
+                      diff = subprocess.check_output(['git', 'diff', f'origin/{base_ref}..HEAD', '--', file]).decode('utf-8')
+                      user_message += f"File: {file}\n```diff\n{diff}\n```\n\n"
+                      print(f"Added diff for file: {file}")
+                  except Exception as e:
+                      user_message += f"File: {file}\nError reading file and getting diff: {str(e)}\n\n"
+                      print(f"Error getting diff for file {file}: {str(e)}")
           
           user_message += "Please review these changes and provide feedback."
           print("User message prepared.")
-
+          
           # Get Claude's review using the Messages API
           print("Sending request to Claude...")
           try:
@@ -80,7 +87,7 @@ jobs:
           except Exception as e:
               print(f"Error getting review from Claude: {str(e)}")
               review_comment = f"Error getting review: {str(e)}"
-
+          
           # Post review as a PR comment
           print("Posting review as PR comment...")
           headers = {
@@ -99,6 +106,6 @@ jobs:
               print(f"Response content: {response.text}")
           except Exception as e:
               print(f"Error posting PR comment: {str(e)}")
-
+          
           print("PR review process completed.")
           EOF
