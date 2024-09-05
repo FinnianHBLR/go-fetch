@@ -1,0 +1,73 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          echo "CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}..HEAD | xargs)" >> $GITHUB_OUTPUT
+
+      - name: Review PR with Claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Install required packages
+          pip install anthropic requests
+
+          # Python script to review PR
+          python - <<EOF
+          import anthropic
+          import requests
+          import os
+          import json
+
+          # Initialize Anthropic client
+          client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
+
+          # Get changed files
+          changed_files = os.environ['CHANGED_FILES'].split()
+
+          # Prepare the prompt for Claude
+          prompt = f"You are reviewing a pull request. The following files were changed:\n\n"
+          for file in changed_files:
+              with open(file, 'r') as f:
+                  content = f.read()
+              prompt += f"File: {file}\n```\n{content}\n```\n\n"
+          
+          prompt += "Please review these changes and provide feedback. Focus on code quality, potential bugs, and adherence to best practices."
+
+          # Get Claude's review
+          response = client.completions.create(
+              model="claude-3-opus-20240229",
+              prompt=prompt,
+              max_tokens_to_sample=1000
+          )
+
+          review_comment = response.completion
+
+          # Post review as a PR comment
+          headers = {
+              'Authorization': f"token {os.environ['GITHUB_TOKEN']}",
+              'Accept': 'application/vnd.github.v3+json'
+          }
+          data = {
+              'body': f"Claude's Review:\n\n{review_comment}"
+          }
+          repo = os.environ['GITHUB_REPOSITORY']
+          pr_number = os.environ['GITHUB_REF'].split('/')[2]
+          url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+          requests.post(url, headers=headers, data=json.dumps(data))
+          EOF
