@@ -42,21 +42,26 @@ jobs:
           changed_files = os.environ.get('CHANGED_FILES', '').split()
 
           # Prepare the prompt for Claude
-          prompt = f"You are reviewing a pull request. The following files were changed:\n\n"
+          system_prompt = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
+          human_prompt = "I'm reviewing a pull request. Here are the changed files:\n\n"
+          
           for file in changed_files:
               try:
                   with open(file, 'r') as f:
                       content = f.read()
-                  prompt += f"File: {file}\n```\n{content}\n```\n\n"
+                  human_prompt += f"File: {file}\n```\n{content}\n```\n\n"
               except Exception as e:
-                  prompt += f"File: {file}\nError reading file: {str(e)}\n\n"
+                  human_prompt += f"File: {file}\nError reading file: {str(e)}\n\n"
           
-          prompt += "Please review these changes and provide feedback. Focus on code quality, potential bugs, and adherence to best practices."
+          human_prompt += "Please review these changes and provide feedback."
+
+          # Construct the full prompt
+          full_prompt = f"{system_prompt}\n\nHuman: {human_prompt}\n\nAssistant: Certainly, I'd be happy to review the pull request for you. I'll examine the changes and provide feedback on code quality, potential bugs, and adherence to best practices. Let's go through the changed files:"
 
           # Get Claude's review
           response = client.completions.create(
               model="claude-3-opus-20240229",
-              prompt=prompt,
+              prompt=full_prompt,
               max_tokens_to_sample=1000
           )
 
