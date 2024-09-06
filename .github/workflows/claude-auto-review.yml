@@ -51,6 +51,7 @@ jobs:
           # Read the file changes
           with open('file-changes.log', 'r') as file:
               changes = file.read()
+              print(changes)
           print("File changes read.")
           
 
