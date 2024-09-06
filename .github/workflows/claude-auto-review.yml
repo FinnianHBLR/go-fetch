@@ -20,7 +20,6 @@ jobs:
           git diff origin/${{ github.base_ref }}..HEAD > file-changes.log
           echo "Changed files and diffs:"
           cat file-changes.log
-          echo "Listing current directory:"
 
       - name: Set up Python
         uses: actions/setup-python@v4
