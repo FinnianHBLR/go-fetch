@@ -58,7 +58,7 @@ jobs:
 
              # Prepare the message for Claude
              system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
-             user_message = f"I'm reviewing a pull request. Here are the changes:\n\n```diff\n{changes}\n```\n\nPlease review these changes and provide feedback."
+             user_message = f"I'm reviewing a pull request. Here are the changes:```{changes}```Please review these changes and provide feedback."
              print("User message prepared here:")
              print(user_message)
                 
@@ -99,7 +99,7 @@ jobs:
                  print(f"Error posting PR comment: {str(e)}")
              
              print("PR review process completed.")
-             EOF
+            EOF
       - name: Upload file changes log as artifact
         uses: actions/upload-artifact@v3
         with:
