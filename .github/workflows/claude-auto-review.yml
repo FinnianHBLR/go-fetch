@@ -103,9 +103,3 @@ jobs:
              
           print("PR review process completed.")
           EOF
-          
-      - name: Upload file changes log as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: file-changes-log
-          path: file-changes.log
