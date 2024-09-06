@@ -21,8 +21,6 @@ jobs:
           echo "Changed files and diffs:"
           cat file-changes.log
           echo "Listing current directory:"
-          pwd
-          ls -a
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -51,9 +49,6 @@ jobs:
           client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
           print("Anthropic client initialized.")
 
-          print(f"Current working directory: {os.getcwd()}")
-          print(f"Directory contents: {os.listdir('.')}")      
-
           # Read the file changes
           with open('file-changes.log', 'r') as file:
               changes = file.read()
@@ -62,8 +57,7 @@ jobs:
           # Prepare the message for Claude
           system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
           user_message = f"I'm reviewing a pull request. Here are the changes: {changes} Please review these changes and provide feedback."
-          print("User message prepared here:")
-          print(user_message)
+          print(f"User message prepared here: \n {user_message}")
                 
           # Get Claude's review using the Messages API
           print("Sending request to Claude...")
