@@ -6,6 +6,7 @@ jobs:
   claude-review:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
       - name: Checkout code
@@ -19,22 +20,26 @@ jobs:
           CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}..HEAD | xargs)
           echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
           echo "Changed files: $CHANGED_FILES"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install anthropic requests
       - name: Review PR with Claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Install required packages
-          pip install anthropic requests
-
-          # Python script to review PR
           python - <<EOF
           import anthropic
           import requests
           import os
           import json
           import subprocess
-
+          
           print("Starting PR review process...")
           
           # Initialize Anthropic client
@@ -51,21 +56,13 @@ jobs:
           
           for file in changed_files:
               try:
-                  with open(file, 'r') as f:
-                      content = f.read()
-                  user_message += f"File: {file}\n```\n{content}\n```\n\n"
-                  print(f"Added content for file: {file}")
+                  base_ref = os.environ['GITHUB_BASE_REF']
+                  diff = subprocess.check_output(['git', 'diff', f'origin/{base_ref}..HEAD', '--', file]).decode('utf-8')
+                  user_message += f"File: {file}\n```diff\n{diff}\n```\n\n"
+                  print(f"Added diff for file: {file}")
               except Exception as e:
-                  print(f"Error reading file {file}: {str(e)}")
-                  # If we can't read the file, try to get its diff
-                  try:
-                      base_ref = os.environ['GITHUB_BASE_REF']
-                      diff = subprocess.check_output(['git', 'diff', f'origin/{base_ref}..HEAD', '--', file]).decode('utf-8')
-                      user_message += f"File: {file}\n```diff\n{diff}\n```\n\n"
-                      print(f"Added diff for file: {file}")
-                  except Exception as e:
-                      user_message += f"File: {file}\nError reading file and getting diff: {str(e)}\n\n"
-                      print(f"Error getting diff for file {file}: {str(e)}")
+                  print(f"Error getting diff for file {file}: {str(e)}")
+                  user_message += f"File: {file}\nError getting diff: {str(e)}\n\n"
           
           user_message += "Please review these changes and provide feedback."
           print("User message prepared.")
