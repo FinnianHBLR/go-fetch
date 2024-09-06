@@ -58,8 +58,11 @@ jobs:
               try:
                   base_ref = os.environ['GITHUB_BASE_REF']
                   diff = subprocess.check_output(['git', 'diff', f'origin/{base_ref}..HEAD', '--', file]).decode('utf-8')
-                  user_message += f"File: {file}\n```diff\n{diff}\n```\n\n"
-                  print(f"Added diff for file: {file}")
+                  if diff.strip():
+                      user_message += f"File: {file}\n```diff\n{diff}\n```\n\n"
+                      print(f"Added diff for file: {file}")
+                  else:
+                      print(f"No changes detected in file: {file}")
               except Exception as e:
                   print(f"Error getting diff for file {file}: {str(e)}")
                   user_message += f"File: {file}\nError getting diff: {str(e)}\n\n"
