@@ -20,6 +20,7 @@ jobs:
           echo "Changed files and diffs:"
           cat file-changes.log
           echo "Listing current directory:"
+          pwd
           ls -l
 
       - name: Set up Python
