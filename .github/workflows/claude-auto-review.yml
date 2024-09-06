@@ -13,6 +13,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          
       - name: Get file changes in the PR
         run: |
           git fetch origin ${{ github.base_ref }}
@@ -27,10 +28,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.x"
+          
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install anthropic requests
+          
       - name: Review PR with Claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -56,50 +59,51 @@ jobs:
               changes = file.read()
               print(changes)
 
-             # Prepare the message for Claude
-             system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
-             user_message = f"I'm reviewing a pull request. Here are the changes:```{changes}```Please review these changes and provide feedback."
-             print("User message prepared here:")
-             print(user_message)
+          # Prepare the message for Claude
+          system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
+          user_message = f"I'm reviewing a pull request. Here are the changes:```{changes}```Please review these changes and provide feedback."
+          print("User message prepared here:")
+          print(user_message)
                 
-             # Get Claude's review using the Messages API
-             print("Sending request to Claude...")
-             try:
-                 response = client.messages.create(
-                     model="claude-3-opus-20240229",
-                     max_tokens=1000,
-                     system=system_message,
-                     messages=[
-                         {"role": "user", "content": user_message}
-                     ]
-                 )
-                 print("Received response from Claude.")
-                 review_comment = response.content[0].text
-                 print(f"Claude's review: {review_comment}")
-             except Exception as e:
-                 print(f"Error getting review from Claude: {str(e)}")
-                 review_comment = f"Error getting review: {str(e)}"
+          # Get Claude's review using the Messages API
+          print("Sending request to Claude...")
+          try:
+              response = client.messages.create(
+                  model="claude-3-opus-20240229",
+                  max_tokens=1000,
+                  system=system_message,
+                  messages=[
+                      {"role": "user", "content": user_message}
+                  ]
+              )
+              print("Received response from Claude.")
+              review_comment = response.content[0].text
+              print(f"Claude's review: {review_comment}")
+          except Exception as e:
+              print(f"Error getting review from Claude: {str(e)}")
+              review_comment = f"Error getting review: {str(e)}"
                 
-             # Post review as a PR comment
-             print("Posting review as PR comment...")
-             headers = {
-                 'Authorization': f"token {os.environ['GITHUB_TOKEN']}",
-                 'Accept': 'application/vnd.github.v3+json'
-             }
-             data = {
-                 'body': f"Claude's Review:\n\n{review_comment}"
-             }
-             repo = os.environ['GITHUB_REPOSITORY']
-             pr_number = os.environ['GITHUB_REF'].split('/')[2]
-             url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
-             try:
-                 response = requests.post(url, headers=headers, data=json.dumps(data))
-                 print(f"PR comment posted. Status code: {response.status_code}")
-             except Exception as e:
-                 print(f"Error posting PR comment: {str(e)}")
+          # Post review as a PR comment
+          print("Posting review as PR comment...")
+          headers = {
+              'Authorization': f"token {os.environ['GITHUB_TOKEN']}",
+              'Accept': 'application/vnd.github.v3+json'
+          }
+          data = {
+              'body': f"Claude's Review:\n\n{review_comment}"
+          }
+          repo = os.environ['GITHUB_REPOSITORY']
+          pr_number = os.environ['GITHUB_REF'].split('/')[2]
+          url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+          try:
+              response = requests.post(url, headers=headers, data=json.dumps(data))
+              print(f"PR comment posted. Status code: {response.status_code}")
+          except Exception as e:
+              print(f"Error posting PR comment: {str(e)}")
              
-             print("PR review process completed.")
-            EOF
+          print("PR review process completed.")
+          EOF
+          
       - name: Upload file changes log as artifact
         uses: actions/upload-artifact@v3
         with:
