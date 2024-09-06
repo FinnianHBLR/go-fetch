@@ -26,7 +26,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: "3.x"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -41,13 +41,13 @@ jobs:
           import requests
           import os
           import json
-          
+
           print("Starting PR review process...")
-          
+
           # Initialize Anthropic client
           client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
           print("Anthropic client initialized.")
-          
+
           print(f"Current working directory: {os.getcwd()}")
           print(f"Directory contents: {os.listdir('.')}")      
 
@@ -55,7 +55,6 @@ jobs:
           with open('file-changes.log', 'r') as file:
               changes = file.read()
               print(changes)
-          
 
              # Prepare the message for Claude
              system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
@@ -106,5 +105,3 @@ jobs:
         with:
           name: file-changes-log
           path: file-changes.log
-
-
