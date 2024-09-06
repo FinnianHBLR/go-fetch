@@ -63,8 +63,6 @@ jobs:
           print("First 500 characters of changes:")
           print(changes[:500])
           
-          file_content=$(cat file-changes.log)
-
           # Prepare the message for Claude
           system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
           user_message = f"""I'm reviewing a pull request. Here are the changes:
@@ -78,6 +76,9 @@ jobs:
           
           # Get Claude's review using the Messages API
           print("Sending request to Claude...")
+          
+          file_content=$(cat file-changes.log)
+          
           try:
               response = client.messages.create(
                   model="claude-3-opus-20240229",
