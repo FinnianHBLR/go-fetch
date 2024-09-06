@@ -13,26 +13,30 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      
       - name: Get file changes in the PR
         run: |
           git fetch origin ${{ github.base_ref }}
           git diff origin/${{ github.base_ref }}..HEAD > file-changes.log
           echo "Changed files and diffs:"
           cat file-changes.log
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
+      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install anthropic requests
+      
       - name: Review PR with Claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python - <<EOF
+          python << EOF
           import anthropic
           import requests
           import os
@@ -51,9 +55,14 @@ jobs:
           
           # Prepare the message for Claude
           system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
-          user_message = f"I'm reviewing a pull request. Here are the changes:\n\n```diff\n{changes}\n```\n\nPlease review these changes and provide feedback."
-          print("User message prepared here:")
-          print(user_message)
+          user_message = f"""I'm reviewing a pull request. Here are the changes:
+
+          ```diff
+          {changes}
+          ```
+
+          Please review these changes and provide feedback."""
+          print("User message prepared.")
           
           # Get Claude's review using the Messages API
           print("Sending request to Claude...")
@@ -93,6 +102,7 @@ jobs:
           
           print("PR review process completed.")
           EOF
+      
       - name: Upload file changes log as artifact
         uses: actions/upload-artifact@v3
         with:
