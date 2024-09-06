@@ -52,7 +52,8 @@ jobs:
           # Prepare the message for Claude
           system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
           user_message = f"I'm reviewing a pull request. Here are the changes:\n\n```diff\n{changes}\n```\n\nPlease review these changes and provide feedback."
-          print("User message prepared.")
+          print("User message prepared here:")
+          print(user_message)
           
           # Get Claude's review using the Messages API
           print("Sending request to Claude...")
@@ -87,7 +88,6 @@ jobs:
           try:
               response = requests.post(url, headers=headers, data=json.dumps(data))
               print(f"PR comment posted. Status code: {response.status_code}")
-              print(f"Response content: {response.text}")
           except Exception as e:
               print(f"Error posting PR comment: {str(e)}")
           
