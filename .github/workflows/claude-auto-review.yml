@@ -40,21 +40,6 @@ jobs:
           import json
           import subprocess
           
-          def get_file_content(file_path, base_ref):
-              try:
-                  # Get the content of the file in the base branch
-                  base_content = subprocess.check_output(['git', 'show', f'origin/{base_ref}:{file_path}'], stderr=subprocess.DEVNULL).decode('utf-8')
-              except subprocess.CalledProcessError:
-                  base_content = ""
-          
-              try:
-                  # Get the content of the file in the current branch
-                  current_content = subprocess.check_output(['git', 'show', f'HEAD:{file_path}'], stderr=subprocess.DEVNULL).decode('utf-8')
-              except subprocess.CalledProcessError:
-                  current_content = ""
-          
-              return base_content, current_content
-          
           print("Starting PR review process...")
           
           # Initialize Anthropic client
@@ -69,21 +54,15 @@ jobs:
           system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
           user_message = "I'm reviewing a pull request. Here are the changed files:\n\n"
           
-          base_ref = os.environ['GITHUB_BASE_REF']
           for file in changed_files:
               try:
-                  base_content, current_content = get_file_content(file, base_ref)
-                  
-                  if base_content != current_content:
-                      user_message += f"File: {file}\n"
-                      user_message += "Base version:\n```\n" + base_content + "\n```\n"
-                      user_message += "Current version:\n```\n" + current_content + "\n```\n\n"
-                      print(f"Added content for file: {file}")
-                  else:
-                      print(f"No changes detected in file: {file}")
+                  base_ref = os.environ['GITHUB_BASE_REF']
+                  diff = subprocess.check_output(['git', 'diff', f'origin/{base_ref}..HEAD', '--', file]).decode('utf-8')
+                  user_message += f"File: {file}\n```diff\n{diff}\n```\n\n"
+                  print(f"Added diff for file: {file}")
               except Exception as e:
-                  print(f"Error getting content for file {file}: {str(e)}")
-                  user_message += f"File: {file}\nError getting content: {str(e)}\n\n"
+                  print(f"Error getting diff for file {file}: {str(e)}")
+                  user_message += f"File: {file}\nError getting diff: {str(e)}\n\n"
           
           user_message += "Please review these changes and provide feedback."
           print("User message prepared.")
