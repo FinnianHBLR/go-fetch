@@ -21,7 +21,7 @@ jobs:
           cat file-changes.log
           echo "Listing current directory:"
           pwd
-          ls -l
+          ls -a
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -103,4 +103,5 @@ jobs:
         with:
           name: file-changes-log
           path: file-changes.log
+
 
