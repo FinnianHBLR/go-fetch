@@ -14,11 +14,19 @@ jobs:
         with:
           fetch-depth: 0
       
+      - name: Debug Git info
+        run: |
+          echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
+          echo "PR base branch: ${{ github.base_ref }}"
+          echo "PR head branch: ${{ github.head_ref }}"
+          git branch -a
+      
       - name: Get file changes in the PR
         run: |
           git fetch origin ${{ github.base_ref }}
-          git diff origin/${{ github.base_ref }}..HEAD > file-changes.log
-          echo "Changed files and diffs:"
+          git fetch origin ${{ github.head_ref }}
+          echo "Diff between ${{ github.base_ref }} and ${{ github.head_ref }}:"
+          git diff origin/${{ github.base_ref }}...origin/${{ github.head_ref }} > file-changes.log
           cat file-changes.log
       
       - name: Set up Python
@@ -51,7 +59,9 @@ jobs:
           # Read the file changes
           with open('file-changes.log', 'r') as file:
               changes = file.read()
-          print("File changes read.")
+          print(f"File changes read. Length: {len(changes)} characters")
+          print("First 500 characters of changes:")
+          print(changes[:500])
           
           # Prepare the message for Claude
           system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
@@ -61,7 +71,7 @@ jobs:
           {changes}
           ```
 
-          Please review these changes and provide feedback."""
+          Please review these changes and provide feedback. If no changes are shown, please indicate that."""
           print("User message prepared.")
           
           # Get Claude's review using the Messages API
