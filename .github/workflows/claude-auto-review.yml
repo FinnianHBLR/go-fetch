@@ -82,7 +82,7 @@ jobs:
                   max_tokens=1000,
                   system=system_message,
                   messages=[
-                      {"role": "user", "content": user_message}
+                      {"role": "user", "content": file-changes.log}
                   ]
               )
               print("Received response from Claude.")
