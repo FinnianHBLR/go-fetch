@@ -63,11 +63,15 @@ jobs:
           print("First 500 characters of changes:")
           print(changes[:500])
           
+          file_content=$(cat file-changes.log)
+
           # Prepare the message for Claude
           system_message = "You are an AI assistant tasked with reviewing pull requests. Provide concise, actionable feedback focusing on code quality, potential bugs, and adherence to best practices."
           user_message = f"""I'm reviewing a pull request. Here are the changes:
 
-          file_content=$(cat file-changes.log)
+          ```diff
+          {changes}
+          ```
 
           Please review these changes and provide feedback. If no changes are shown, please indicate that."""
           print("User message prepared.")
