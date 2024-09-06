@@ -48,6 +48,9 @@ jobs:
           client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
           print("Anthropic client initialized.")
           
+          print(f"Current working directory: {os.getcwd()}")
+          print(f"Directory contents: {os.listdir('.')}")      
+
           # Read the file changes
           with open('file-changes.log', 'r') as file:
               changes = file.read()
